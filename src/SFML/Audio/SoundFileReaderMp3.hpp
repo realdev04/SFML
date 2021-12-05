@@ -30,9 +30,21 @@
 ////////////////////////////////////////////////////////////
 #define NOMINMAX          // To avoid windows.h and std::min issue
 #define MINIMP3_NO_STDIO  // Minimp3 control define, eliminate file manipulation code which is useless here
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244 4456)
+#endif
+
 #include <minimp3_ex.h>
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #undef NOMINMAX
 #undef MINIMP3_NO_STDIO
+
 #include <SFML/Audio/SoundFileReader.hpp>
 #include <vector>
 
