@@ -43,13 +43,13 @@ namespace
 std::size_t readCallback(void* ptr, std::size_t size, void* data)
 {
     sf::InputStream* stream = static_cast<sf::InputStream*>(data);
-    return static_cast<std::size_t>(stream->read(ptr, size));
+    return static_cast<std::size_t>(stream->read(ptr, static_cast<sf::Int64>(size)));
 }
 
 int seekCallback(std::uint64_t offset, void* data)
 {
     sf::InputStream* stream = static_cast<sf::InputStream*>(data);
-    sf::Int64 position = stream->seek(offset);
+    sf::Int64 position = stream->seek(static_cast<sf::Int64>(offset));
     return position < 0 ? -1 : 0;
 }
 
@@ -67,10 +67,13 @@ namespace priv
 bool SoundFileReaderMp3::check(InputStream& stream)
 {
     Uint8 header[10];
-    if (stream.read(header, sizeof(header)) < sizeof(header))
+
+    if (static_cast<std::size_t>(stream.read(header, static_cast<Int64>(sizeof(header)))) < sizeof(header))
         return false;
+
     if (hasValidId3Tag(header))
         return true;
+
     if (hdr_valid(header))
         return true;
 
@@ -110,8 +113,8 @@ bool SoundFileReaderMp3::open(InputStream& stream, Info& info)
         return false;
 
     // Retrieve the music attributes
-    info.channelCount = m_decoder.info.channels;
-    info.sampleRate   = m_decoder.info.hz;
+    info.channelCount = static_cast<unsigned int>(m_decoder.info.channels);
+    info.sampleRate   = static_cast<unsigned int>(m_decoder.info.hz);
     info.sampleCount  = m_decoder.samples;
 
     m_numSamples      = info.sampleCount;
@@ -131,7 +134,7 @@ void SoundFileReaderMp3::seek(Uint64 sampleOffset)
 Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount)
 {
     Uint64 toRead = std::min(maxCount, m_numSamples - m_position);
-    toRead = mp3dec_ex_read(&m_decoder, samples, toRead);
+    toRead = static_cast<Uint64>(mp3dec_ex_read(&m_decoder, samples, toRead));
     m_position += toRead;
     return toRead;
 }
