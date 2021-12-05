@@ -60,18 +60,18 @@ namespace
     {
         sf::Uint64 contextId = sf::Context::getActiveContextId();
 
-        for (std::set<std::pair<sf::Uint64, unsigned int> >::iterator iter = staleFrameBuffers.begin(); iter != staleFrameBuffers.end();)
+        for(auto it = staleFrameBuffers.begin(); it != staleFrameBuffers.end();)
         {
-            if (iter->first == contextId)
+            if (it->first == contextId)
             {
-                GLuint frameBuffer = static_cast<GLuint>(iter->second);
+                GLuint frameBuffer = static_cast<GLuint>(it->second);
                 glCheck(GLEXT_glDeleteFramebuffers(1, &frameBuffer));
 
-                staleFrameBuffers.erase(iter++);
+                staleFrameBuffers.erase(it++);
             }
             else
             {
-                ++iter;
+                ++it;
             }
         }
     }
@@ -84,17 +84,17 @@ namespace
         sf::Uint64 contextId = sf::Context::getActiveContextId();
 
         // Destroy active frame buffer objects
-        for (std::set<std::map<sf::Uint64, unsigned int>*>::iterator frameBuffersIter = frameBuffers.begin(); frameBuffersIter != frameBuffers.end(); ++frameBuffersIter)
+        for (auto* frameBuffer : frameBuffers)
         {
-            for (std::map<sf::Uint64, unsigned int>::iterator iter = (*frameBuffersIter)->begin(); iter != (*frameBuffersIter)->end(); ++iter)
+            for (auto it = frameBuffer->begin(); it != frameBuffer->end(); ++it)
             {
-                if (iter->first == contextId)
+                if (it->first == contextId)
                 {
-                    GLuint frameBuffer = iter->second;
-                    glCheck(GLEXT_glDeleteFramebuffers(1, &frameBuffer));
+                    GLuint frameBufferId = it->second;
+                    glCheck(GLEXT_glDeleteFramebuffers(1, &frameBufferId));
 
                     // Erase the entry from the RenderTextureImplFBO's map
-                    (*frameBuffersIter)->erase(iter);
+                    frameBuffer->erase(it);
 
                     break;
                 }
@@ -160,11 +160,11 @@ RenderTextureImplFBO::~RenderTextureImplFBO()
     }
 
     // Move all frame buffer objects to stale set
-    for (std::map<Uint64, unsigned int>::iterator iter = m_frameBuffers.begin(); iter != m_frameBuffers.end(); ++iter)
-        staleFrameBuffers.emplace(iter->first, iter->second);
+    for (auto& [contextId, frameBufferId] : m_frameBuffers)
+        staleFrameBuffers.emplace(contextId, frameBufferId);
 
-    for (std::map<Uint64, unsigned int>::iterator iter = m_multisampleFrameBuffers.begin(); iter != m_multisampleFrameBuffers.end(); ++iter)
-        staleFrameBuffers.emplace(iter->first, iter->second);
+    for (auto& [contextId, multisampleFrameBufferId] : m_multisampleFrameBuffers)
+        staleFrameBuffers.emplace(contextId, multisampleFrameBufferId);
 
     // Clean up FBOs
     destroyStaleFBOs();
@@ -540,26 +540,26 @@ bool RenderTextureImplFBO::activate(bool active)
     {
         Lock lock(mutex);
 
-        std::map<Uint64, unsigned int>::iterator iter;
+        std::map<Uint64, unsigned int>::iterator it;
 
         if (m_multisample)
         {
-            iter = m_multisampleFrameBuffers.find(contextId);
+            it = m_multisampleFrameBuffers.find(contextId);
 
-            if (iter != m_multisampleFrameBuffers.end())
+            if (it != m_multisampleFrameBuffers.end())
             {
-                glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_FRAMEBUFFER, iter->second));
+                glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_FRAMEBUFFER, it->second));
 
                 return true;
             }
         }
         else
         {
-            iter = m_frameBuffers.find(contextId);
+            it = m_frameBuffers.find(contextId);
 
-            if (iter != m_frameBuffers.end())
+            if (it != m_frameBuffers.end())
             {
-                glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_FRAMEBUFFER, iter->second));
+                glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_FRAMEBUFFER, it->second));
 
                 return true;
             }
@@ -594,13 +594,13 @@ void RenderTextureImplFBO::updateTexture(unsigned int)
 
         Lock lock(mutex);
 
-        std::map<Uint64, unsigned int>::iterator iter = m_frameBuffers.find(contextId);
-        std::map<Uint64, unsigned int>::iterator multisampleIter = m_multisampleFrameBuffers.find(contextId);
+        auto it = m_frameBuffers.find(contextId);
+        auto multisampleIter = m_multisampleFrameBuffers.find(contextId);
 
-        if ((iter != m_frameBuffers.end()) && (multisampleIter != m_multisampleFrameBuffers.end()))
+        if ((it != m_frameBuffers.end()) && (multisampleIter != m_multisampleFrameBuffers.end()))
         {
             // Set up the blit target (draw framebuffer) and blit (from the read framebuffer, our multisample FBO)
-            glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_DRAW_FRAMEBUFFER, iter->second));
+            glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_DRAW_FRAMEBUFFER, it->second));
             glCheck(GLEXT_glBlitFramebuffer(0, 0, static_cast<GLint>(m_width), static_cast<GLint>(m_height), 0, 0, static_cast<GLint>(m_width), static_cast<GLint>(m_height), GL_COLOR_BUFFER_BIT, GL_NEAREST));
             glCheck(GLEXT_glBindFramebuffer(GLEXT_GL_DRAW_FRAMEBUFFER, multisampleIter->second));
         }
