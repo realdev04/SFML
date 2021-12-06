@@ -28,7 +28,9 @@
 ////////////////////////////////////////////////////////////
 // Headers
 ////////////////////////////////////////////////////////////
-#define NOMINMAX          // To avoid windows.h and std::min issue
+#ifndef NOMINMAX
+#define NOMINMAX               // To avoid windows.h and std::min issue
+#endif
 #define MINIMP3_NO_STDIO  // Minimp3 control define, eliminate file manipulation code which is useless here
 
 #ifdef _MSC_VER
