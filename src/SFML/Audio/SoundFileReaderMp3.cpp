@@ -31,7 +31,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4242 4244 4456 4267)
+#pragma warning(disable : 4242 4244 4267 4456 4706)
 #endif
 
 #include <minimp3_ex.h>
